@@ -11,7 +11,7 @@ import profile_util
 class CameraLogAnalyzer:
     def __init__(self, log_file):
         self.log_file = log_file
-        self.logger = profile_util.set_logger('out.txt')
+        self.logger = profile_util.set_logger('out3.txt')
         self.pipeline_data = defaultdict(
             lambda: {
                 'nodes': defaultdict(
@@ -38,6 +38,7 @@ class CameraLogAnalyzer:
         self.camera_connections = defaultdict(set)  # 相机连接关系
         self._parse_log()
         self._analyze_connections()
+        self.logger.info(f"initilize CameraLogAnalyzer with log_file: {log_file}")
 
     def _timestamp_to_ms(self, timestamp_str):
         """将时间戳字符串转换为毫秒时间戳"""
@@ -703,7 +704,7 @@ class CameraLogAnalyzer:
 
 # 使用示例
 if __name__ == "__main__":
-    log_file = "E:/workspace/openssCamera2.log"
+    log_file = "E:/workspace/openssCamera.log"
     print("check log_file: ", log_file)
     text_output = "pipeline_nodes_session.txt"  # 文本输出文件
     current_path = profile_util.get_current_directory(log_file)

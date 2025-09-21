@@ -89,11 +89,13 @@ class Session:
 class CameraLogAnalyzer:
     def __init__(self, log_file):
         self.log_file = log_file
+        self.logger = profile_util.set_logger('out1.txt')        
         self.sessions = {}  # session_id -> Session对象
         self.current_session = None
         self.session_count = 0
         self.start_time = None  # 日志开始时间
         self.log_events = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))  # pipeline -> (node, port, req_id) -> 事件列表
+        self.logger.info(f"initilize CameraLogAnalyzer with log_file: {log_file}")        
 
     def parse_log(self, chunk_size=100000):
         """解析日志文件，支持大文件分块处理"""
@@ -847,7 +849,7 @@ class CameraLogAnalyzer:
 
 def main():
     # 初始化日志分析器
-    log_file = "E:/workspace/openssCamera2.log"
+    log_file = "E:/workspace/openssCamera.log"
     text_output = "pipeline_nodes_session.txt"  # 文本输出文件
     current_path = profile_util.get_current_directory(log_file)
     output_dir = f"{current_path}/profile_camerax" # 输出目录
@@ -873,6 +875,7 @@ def main():
     # 再次查看当前工作目录
     print("改变后的工作目录:", os.getcwd())
 
+    #初始化 sessions 和 log
     analyzer = CameraLogAnalyzer(log_file)
     
     # 解析日志（支持大文件）

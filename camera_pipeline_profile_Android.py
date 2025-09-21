@@ -122,6 +122,7 @@ class Pipeline:
 
 class Session:
     def __init__(self, session_id, start_time, camera_id):
+        self.logger = profile_util.set_logger('out.txt')
         self.session_id = session_id
         self.start_time = start_time
         self.end_time = None
@@ -184,8 +185,9 @@ class Session:
 
 
 class CameraLogAnalyzer:
-    def __init__(self, log_file_path):
-        self.log_file_path = log_file_path
+    def __init__(self, log_file):
+        self.log_file = log_file
+        self.logger = profile_util.set_logger('out2.txt')
         self.sessions = {}  # session_id: Session object
         self.current_session = None
         self.session_counter = 1
@@ -236,6 +238,8 @@ class CameraLogAnalyzer:
             )
         }
 
+        self.logger.info(f"initilize CameraLogAnalyzer with log_file: {log_file}")
+
     def parse_timestamp(self, ts_str, base_date=None):
         try:
             # 添加年份信息（假设是当前年）
@@ -274,7 +278,7 @@ class CameraLogAnalyzer:
         base_date = None
         current_session = None
 
-        with open(self.log_file_path, 'r', encoding='utf-8') as file:
+        with open(self.log_file, 'r', encoding='utf-8') as file:
             for line in file:
                 try:
                     # 解析时间戳
@@ -488,7 +492,7 @@ class CameraLogAnalyzer:
 # 使用示例
 if __name__ == "__main__":
     # 初始化日志分析器
-    log_file = "E:/workspace/openssCamera2.log"
+    log_file = "E:/workspace/openssCamera.log"
     text_output = "pipeline_nodes_session.txt"  # 文本输出文件
     current_path = profile_util.get_current_directory(log_file)
     output_dir = f"{current_path}/profile_camerax" # 输出目录

@@ -1,18 +1,26 @@
 import subprocess
 import re
 from collections import defaultdict
+import sys
 import pandas as pd
 import argparse
 import os
-
+from dataclasses import dataclass
 import profile_util
+@dataclass
+class ArgumentData:
+    repo_path: str = None
+    author_name: str = None
+    output: str = None
+    log_file: str = None
 
 class GitCommitAnalyzer:
-    def __init__(self, repo_path):
-        self.repo_path = repo_path
-        self.logger = profile_util.set_logger('out.txt')
-        self.logger.info(f"initilize GitCommitAnalyzer with log_file: {repo_path}")
-
+    def __init__(self, log_file):
+        self.args = None
+        self.repo_path = None
+        self.log_file = log_file
+        self.logger = profile_util.set_logger(log_file)
+        self.logger.info(f"GitCommitAnalyzer initialize done")
 
     def get_git_log_commits(self, author_name):
         """获取指定作者的提交哈希列表"""
@@ -22,9 +30,12 @@ class GitCommitAnalyzer:
             os.chdir(self.repo_path) #该方法是一个用于改变当前工作目录的函数
             
             # 执行 git log 命令获取提交哈希
-            cmd = ['git', 'log', '--author=' + author_name, '--pretty=format:%H']
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            
+            #cmd = ['git', 'log', '--author=' + author_name, '--pretty=format:%H']
+            #result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            #change to below to improve performance
+            cmd = ['git', 'log', '--author=' + author_name, '-n', '50', '--pretty=format:%H']
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
+
             # 切回原目录
             os.chdir(original_dir) 
             
@@ -96,12 +107,21 @@ class GitCommitAnalyzer:
         parser.add_argument('--output', '-o', default='git_file_stats.xlsx', help='输出Excel文件名')
 
         self.logger.info(f"format parser args")
-        args = parser.parse_args()
+
+        # 解析命令行参数
+        if len(sys.argv) > 4: #sys.argv[0]是脚本名称，从sys.argv[1]开始是传递给脚本的参数
+            print("输入的命令参数 : {len(sys.argv)}")
+            args = parser.parse_args()
+        else:
+            print("使用默认的命令参数")
+            args = ArgumentData("E:\workspace\performance", "skychin4216@gmail.com", 'git_file_stats.xlsx', 'commit_files.txt')
+            print(f"output: {args.output} repo_path: {args.repo_path} author_name:{args.author_name} log_file:{args.log_file}")
+
+        self.args = args
+        self.repo_path = args.repo_path
         self.logger.info(f"parser args for analyze_core_files done")
 
-        if(self.repo_path == None) :
-           self.repo_path = args.repo_path
-
+        profile_util.change_file_permissions(args.repo_path)
         # 检查仓库路径是否存在
         if not os.path.exists(args.repo_path):
             print(f"错误：路径 '{args.repo_path}' 不存在")
@@ -126,7 +146,7 @@ class GitCommitAnalyzer:
 if __name__ == "__main__":
     log_file = "E:/workspace/openssCamera.log"
     print("check log_file: ", log_file)
-    text_output = "pipeline_nodes_session.txt"  # 文本输出文件
+    text_output = "commit_files.txt"  # 文本输出文件
     current_path = profile_util.get_current_directory(log_file)
     output_dir = f"{current_path}/profile_camera" # 输出目录
     print(f"output_dir {output_dir}")
@@ -153,10 +173,11 @@ if __name__ == "__main__":
 
     # 初始化 git 代码提交分析器
     output_dir = None
-    analyzer = GitCommitAnalyzer(output_dir)
+    analyzer = GitCommitAnalyzer(log_file)
     analyzer.analyze_core_files()
 
 
 #pip install pandas openpyxl
 #python git_author_analysis.py "E:\workspace\performance" "作者姓名"
 #python git_author_analysis.py "E:\workspace\performance" "skychin4216@gmail.com"
+#sk-2741ac656ea94c49bc0e13b477139ea6  cline_deepseek

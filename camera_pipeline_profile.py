@@ -36,8 +36,6 @@ class CameraLogAnalyzer:
         self.current_session = None  # 当前活跃会话
         self.session_counter = 1  # 会话计数器
         self.camera_connections = defaultdict(set)  # 相机连接关系
-        self._parse_log()
-        self._analyze_connections()
         self.logger.info(f"initilize CameraLogAnalyzer with log_file: {log_file}")
 
     def _timestamp_to_ms(self, timestamp_str):
@@ -92,7 +90,7 @@ class CameraLogAnalyzer:
         stream_off_pattern = r'camxpipeline.cpp:\d+ StreamOff\(\) (\w+_\d+_cam_\d+)'
 
         # 相机ID提取模式
-        camera_id_pattern = r'camera ID (\d+)'
+        camera_id_pattern = r'camera ID (\d+)|Camera ID (\d+)|camera id (\d+)'
 
         current_pipeline = None
 
@@ -132,8 +130,16 @@ class CameraLogAnalyzer:
                                 'log_entries': [log_entry]
                             }
                             session_started = True
+                            self.logger.info(f"line: {line}")
                             self.logger.info(f"Session started: {session_id} for camera {camera_id}")
                             break
+                elif self.current_session != None and self.sessions[self.current_session]['camera_id'] == "unknown":
+                    cam_id_match = re.search(camera_id_pattern, line)
+                    if cam_id_match:
+                        camera_id = cam_id_match.group(1)
+                        self.sessions[self.current_session]['camera_id'] = camera_id
+                        self.logger.info(f"line: {line}")
+                        self.logger.info(f"update camera_id : {camera_id}")
 
                 # 检查会话结束事件
                 if session_started:
@@ -733,4 +739,6 @@ if __name__ == "__main__":
 
     # 初始化日志分析器
     analyzer = CameraLogAnalyzer(log_file)
+    analyzer._parse_log()
+    analyzer._analyze_connections()
     analyzer.profile_camera()
